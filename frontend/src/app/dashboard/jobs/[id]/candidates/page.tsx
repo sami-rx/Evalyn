@@ -1,170 +1,71 @@
+"use client";
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
-    Users,
-    TrendingUp,
-    Clock,
-    AlertCircle,
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
+import {
+    Trophy,
+    Medal,
     ChevronRight,
-    Mail,
-    Phone,
-    MapPin,
-    Calendar
+    TrendingUp,
+    Mail
 } from 'lucide-react';
 import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 
 /**
- * Candidate Pipeline Page
- * Kanban board showing candidates by stage for a specific job
+ * Candidate Leaderboard Page
+ * Single table showing all candidates ranked by score
  */
 
 // Mock data
-const mockJob = {
-    id: '1',
-    title: 'Senior Frontend Engineer',
-    department: 'Engineering',
-    status: 'interviewing',
-    totalCandidates: 12,
-    needsReview: 3,
+const mockCandidates = [
+    { id: '1', name: 'Sarah Chen', role: 'Frontend Engineer', score: 96, avatar: 'SC' },
+    { id: '11', name: 'Omar Hassan', role: 'Data Scientist', score: 95, avatar: 'OH' },
+    { id: '5', name: 'Marcus Williams', role: 'Backend Engineer', score: 94, avatar: 'MW' },
+    { id: '8', name: 'Jessica Park', role: 'Product Designer', score: 92, avatar: 'JP' },
+    { id: '2', name: 'Alex Johnson', role: 'Frontend Engineer', score: 91, avatar: 'AJ' },
+    { id: '12', name: 'Nina Patel', role: 'Data Scientist', score: 90, avatar: 'NP' },
+    { id: '6', name: 'Priya Patel', role: 'Backend Engineer', score: 89, avatar: 'PP' },
+    { id: '3', name: 'Emily Rodriguez', role: 'Frontend Engineer', score: 88, avatar: 'ER' },
+    { id: '9', name: 'Michael Torres', role: 'Product Designer', score: 87, avatar: 'MT' },
+    { id: '7', name: 'James Lee', role: 'Backend Engineer', score: 85, avatar: 'JL' },
+    { id: '4', name: 'David Kim', role: 'Frontend Engineer', score: 82, avatar: 'DK' },
+    { id: '10', name: 'Lisa Wang', role: 'Product Designer', score: 78, avatar: 'LW' },
+].sort((a, b) => b.score - a.score);
+
+const getScoreColor = (score: number) => {
+    if (score >= 90) return 'text-green-600 bg-green-50';
+    if (score >= 75) return 'text-amber-600 bg-amber-50';
+    return 'text-red-600 bg-red-50';
 };
 
-const mockCandidates = [
-    // Applied
-    {
-        id: '1',
-        name: 'Sarah Chen',
-        email: 'sarah.chen@email.com',
-        phone: '+1 (555) 123-4567',
-        location: 'San Francisco, CA',
-        avatar: 'SC',
-        stage: 'applied',
-        matchScore: 92,
-        confidence: 88,
-        needsReview: false,
-        appliedDate: '2026-01-12',
-    },
-    {
-        id: '2',
-        name: 'Michael Torres',
-        email: 'michael.t@email.com',
-        phone: '+1 (555) 234-5678',
-        location: 'Austin, TX',
-        avatar: 'MT',
-        stage: 'applied',
-        matchScore: 78,
-        confidence: 72,
-        needsReview: true,
-        appliedDate: '2026-01-13',
-    },
+const getRoleBadgeColor = (role: string) => {
+    const colors: Record<string, string> = {
+        'Frontend Engineer': 'bg-blue-100 text-blue-700',
+        'Backend Engineer': 'bg-purple-100 text-purple-700',
+        'Product Designer': 'bg-pink-100 text-pink-700',
+        'Data Scientist': 'bg-green-100 text-green-700',
+    };
+    return colors[role] || 'bg-slate-100 text-slate-700';
+};
 
-    // Screening
-    {
-        id: '3',
-        name: 'Emily Rodriguez',
-        email: 'emily.r@email.com',
-        phone: '+1 (555) 345-6789',
-        location: 'New York, NY',
-        avatar: 'ER',
-        stage: 'screening',
-        matchScore: 95,
-        confidence: 91,
-        needsReview: false,
-        appliedDate: '2026-01-10',
-    },
-    {
-        id: '4',
-        name: 'David Kim',
-        email: 'david.kim@email.com',
-        phone: '+1 (555) 456-7890',
-        location: 'Seattle, WA',
-        avatar: 'DK',
-        stage: 'screening',
-        matchScore: 85,
-        confidence: 79,
-        needsReview: true,
-        appliedDate: '2026-01-11',
-    },
-
-    // Interview
-    {
-        id: '5',
-        name: 'Jessica Park',
-        email: 'jessica.p@email.com',
-        phone: '+1 (555) 567-8901',
-        location: 'Boston, MA',
-        avatar: 'JP',
-        stage: 'interview',
-        matchScore: 88,
-        confidence: 85,
-        needsReview: false,
-        appliedDate: '2026-01-08',
-    },
-    {
-        id: '6',
-        name: 'Alex Johnson',
-        email: 'alex.j@email.com',
-        phone: '+1 (555) 678-9012',
-        location: 'Denver, CO',
-        avatar: 'AJ',
-        stage: 'interview',
-        matchScore: 91,
-        confidence: 87,
-        needsReview: true,
-        appliedDate: '2026-01-09',
-    },
-
-    // Coding
-    {
-        id: '7',
-        name: 'Priya Patel',
-        email: 'priya.p@email.com',
-        phone: '+1 (555) 789-0123',
-        location: 'Chicago, IL',
-        avatar: 'PP',
-        stage: 'coding',
-        matchScore: 94,
-        confidence: 90,
-        needsReview: false,
-        appliedDate: '2026-01-05',
-    },
-
-    // Decision
-    {
-        id: '8',
-        name: 'Marcus Williams',
-        email: 'marcus.w@email.com',
-        phone: '+1 (555) 890-1234',
-        location: 'Portland, OR',
-        avatar: 'MW',
-        stage: 'decision',
-        matchScore: 96,
-        confidence: 93,
-        needsReview: false,
-        appliedDate: '2026-01-03',
-    },
-];
-
-const stages = [
-    { id: 'applied', name: 'Applied', color: 'bg-slate-100 text-slate-700' },
-    { id: 'screening', name: 'Resume Screening', color: 'bg-blue-100 text-blue-700' },
-    { id: 'interview', name: 'AI Interview', color: 'bg-purple-100 text-purple-700' },
-    { id: 'coding', name: 'Coding Challenge', color: 'bg-amber-100 text-amber-700' },
-    { id: 'decision', name: 'Final Decision', color: 'bg-green-100 text-green-700' },
-];
+const getRankDisplay = (rank: number) => {
+    if (rank === 1) return <Trophy className="h-5 w-5 text-yellow-500" />;
+    if (rank === 2) return <Medal className="h-5 w-5 text-slate-400" />;
+    if (rank === 3) return <Medal className="h-5 w-5 text-amber-600" />;
+    return <span className="text-sm font-medium text-slate-500">{rank}</span>;
+};
 
 export default function CandidatePipelinePage({ params }: { params: { id: string } }) {
-    const getCandidatesByStage = (stageId: string) => {
-        return mockCandidates.filter(c => c.stage === stageId);
-    };
-
-    const getScoreColor = (score: number) => {
-        if (score >= 90) return 'text-green-600';
-        if (score >= 75) return 'text-amber-600';
-        return 'text-red-600';
-    };
-
     return (
         <div className="space-y-6">
             {/* Header */}
@@ -175,159 +76,140 @@ export default function CandidatePipelinePage({ params }: { params: { id: string
                             Jobs
                         </Link>
                         <ChevronRight className="h-4 w-4 text-slate-400" />
-                        <h1 className="text-3xl font-bold text-slate-900">{mockJob.title}</h1>
+                        <h1 className="text-3xl font-bold text-slate-900">Candidate Leaderboard</h1>
                     </div>
-                    <p className="text-slate-500 mt-1">{mockJob.department}</p>
+                    <p className="text-slate-500 mt-1">Ranked by AI match score</p>
                 </div>
                 <Badge className="bg-blue-600 text-white px-4 py-2">
-                    {mockJob.status}
+                    {mockCandidates.length} Candidates
                 </Badge>
             </div>
 
-            {/* Stats */}
+            {/* Stats Row */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium">Total Candidates</CardTitle>
-                        <Users className="h-4 w-4 text-slate-500" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{mockJob.totalCandidates}</div>
+                    <CardContent className="pt-6">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-green-100 rounded-lg">
+                                <TrendingUp className="h-5 w-5 text-green-600" />
+                            </div>
+                            <div>
+                                <p className="text-sm text-slate-500">Avg Score</p>
+                                <p className="text-2xl font-bold">88%</p>
+                            </div>
+                        </div>
                     </CardContent>
                 </Card>
                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium">Avg Match Score</CardTitle>
-                        <TrendingUp className="h-4 w-4 text-slate-500" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">88%</div>
+                    <CardContent className="pt-6">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-yellow-100 rounded-lg">
+                                <Trophy className="h-5 w-5 text-yellow-600" />
+                            </div>
+                            <div>
+                                <p className="text-sm text-slate-500">Top Scorer</p>
+                                <p className="text-2xl font-bold">96%</p>
+                            </div>
+                        </div>
                     </CardContent>
                 </Card>
                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium">In Review</CardTitle>
-                        <Clock className="h-4 w-4 text-slate-500" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">4</div>
+                    <CardContent className="pt-6">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-blue-100 rounded-lg">
+                                <Medal className="h-5 w-5 text-blue-600" />
+                            </div>
+                            <div>
+                                <p className="text-sm text-slate-500">Roles</p>
+                                <p className="text-2xl font-bold">4</p>
+                            </div>
+                        </div>
                     </CardContent>
                 </Card>
-                <Card className="border-amber-200 bg-amber-50">
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium text-amber-900">Needs Review</CardTitle>
-                        <AlertCircle className="h-4 w-4 text-amber-600" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-amber-600">{mockJob.needsReview}</div>
+                <Card>
+                    <CardContent className="pt-6">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-purple-100 rounded-lg">
+                                <TrendingUp className="h-5 w-5 text-purple-600" />
+                            </div>
+                            <div>
+                                <p className="text-sm text-slate-500">90+ Scores</p>
+                                <p className="text-2xl font-bold">{mockCandidates.filter(c => c.score >= 90).length}</p>
+                            </div>
+                        </div>
                     </CardContent>
                 </Card>
             </div>
 
-            {/* Kanban Board */}
-            <div className="flex gap-4 overflow-x-auto pb-4">
-                {stages.map((stage) => {
-                    const candidates = getCandidatesByStage(stage.id);
-
-                    return (
-                        <div key={stage.id} className="flex-shrink-0 w-80">
-                            <Card className="h-full">
-                                <CardHeader className="pb-3">
-                                    <div className="flex items-center justify-between">
-                                        <CardTitle className="text-base">{stage.name}</CardTitle>
-                                        <Badge variant="secondary" className={stage.color}>
-                                            {candidates.length}
-                                        </Badge>
-                                    </div>
-                                </CardHeader>
-                                <CardContent className="space-y-3">
-                                    {candidates.length === 0 ? (
-                                        <div className="text-center py-8 text-slate-400 text-sm">
-                                            No candidates
+            {/* Single Leaderboard Table */}
+            <Card>
+                <CardHeader>
+                    <CardTitle>All Candidates</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead className="w-16 text-center">Rank</TableHead>
+                                <TableHead>Candidate</TableHead>
+                                <TableHead>Role</TableHead>
+                                <TableHead className="text-right w-24">Score</TableHead>
+                                <TableHead className="w-[180px]"></TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {mockCandidates.map((candidate, index) => (
+                                <TableRow
+                                    key={candidate.id}
+                                    className="cursor-pointer hover:bg-slate-50 transition-colors"
+                                    onClick={() => window.location.href = `/dashboard/candidates/${candidate.id}`}
+                                >
+                                    <TableCell className="text-center">
+                                        <div className="flex justify-center">
+                                            {getRankDisplay(index + 1)}
                                         </div>
-                                    ) : (
-                                        candidates.map((candidate) => (
-                                            <Link
-                                                key={candidate.id}
-                                                href={`/dashboard/candidates/${candidate.id}`}
-                                            >
-                                                <Card className={`hover:shadow-md transition-shadow cursor-pointer ${candidate.needsReview ? 'border-amber-300 bg-amber-50' : ''
+                                    </TableCell>
+                                    <TableCell>
+                                        <div className="flex items-center gap-3">
+                                            <Avatar className="h-9 w-9">
+                                                <AvatarFallback className={`text-sm font-semibold ${index === 0 ? 'bg-yellow-100 text-yellow-700' :
+                                                    index === 1 ? 'bg-slate-100 text-slate-700' :
+                                                        index === 2 ? 'bg-amber-100 text-amber-700' :
+                                                            'bg-blue-50 text-blue-700'
                                                     }`}>
-                                                    <CardContent className="p-4">
-                                                        <div className="flex items-start gap-3">
-                                                            <Avatar className="h-10 w-10">
-                                                                <AvatarFallback className="bg-blue-100 text-blue-700">
-                                                                    {candidate.avatar}
-                                                                </AvatarFallback>
-                                                            </Avatar>
-                                                            <div className="flex-1 min-w-0">
-                                                                <div className="flex items-start justify-between gap-2">
-                                                                    <h4 className="font-semibold text-slate-900 truncate">
-                                                                        {candidate.name}
-                                                                    </h4>
-                                                                    {candidate.needsReview && (
-                                                                        <AlertCircle className="h-4 w-4 text-amber-600 flex-shrink-0" />
-                                                                    )}
-                                                                </div>
-
-                                                                <div className="mt-2 space-y-1">
-                                                                    <div className="flex items-center gap-1 text-xs text-slate-600">
-                                                                        <Mail className="h-3 w-3" />
-                                                                        <span className="truncate">{candidate.email}</span>
-                                                                    </div>
-                                                                    <div className="flex items-center gap-1 text-xs text-slate-600">
-                                                                        <MapPin className="h-3 w-3" />
-                                                                        <span className="truncate">{candidate.location}</span>
-                                                                    </div>
-                                                                </div>
-
-                                                                <div className="mt-3 flex items-center justify-between">
-                                                                    <div>
-                                                                        <p className="text-xs text-slate-500">Match Score</p>
-                                                                        <p className={`text-lg font-bold ${getScoreColor(candidate.matchScore)}`}>
-                                                                            {candidate.matchScore}%
-                                                                        </p>
-                                                                    </div>
-                                                                    <div>
-                                                                        <p className="text-xs text-slate-500">Confidence</p>
-                                                                        <p className="text-lg font-bold text-slate-700">
-                                                                            {candidate.confidence}%
-                                                                        </p>
-                                                                    </div>
-                                                                </div>
-
-                                                                <div className="mt-3 flex items-center gap-1 text-xs text-slate-500">
-                                                                    <Calendar className="h-3 w-3" />
-                                                                    <span>Applied {new Date(candidate.appliedDate).toLocaleDateString()}</span>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </CardContent>
-                                                </Card>
-                                            </Link>
-                                        ))
-                                    )}
-                                </CardContent>
-                            </Card>
-                        </div>
-                    );
-                })}
-            </div>
-
-            {/* Quick Actions */}
-            <Card className="bg-slate-50">
-                <CardContent className="pt-6">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <h3 className="font-semibold text-slate-900">Quick Actions</h3>
-                            <p className="text-sm text-slate-600 mt-1">Manage candidates efficiently</p>
-                        </div>
-                        <div className="flex gap-2">
-                            <Button variant="outline">Export CSV</Button>
-                            <Button variant="outline">Filter Candidates</Button>
-                            <Button>Bulk Review</Button>
-                        </div>
-                    </div>
+                                                    {candidate.avatar}
+                                                </AvatarFallback>
+                                            </Avatar>
+                                            <span className="font-medium text-slate-900">{candidate.name}</span>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Badge variant="secondary" className={getRoleBadgeColor(candidate.role)}>
+                                            {candidate.role}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        <span className={`px-3 py-1 rounded-full font-bold ${getScoreColor(candidate.score)}`}>
+                                            {candidate.score}%
+                                        </span>
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        <Button
+                                            size="sm"
+                                            className="bg-purple-600 hover:bg-purple-700 text-white shadow-sm"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                alert(`Onboarding initiated for ${candidate.name}. Email sent!`);
+                                            }}
+                                        >
+                                            <Mail className="mr-2 h-3.5 w-3.5" />
+                                            Initiate Onboarding
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
                 </CardContent>
             </Card>
         </div>

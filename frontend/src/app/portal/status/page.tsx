@@ -25,10 +25,9 @@ const mockApplication = {
     appliedDate: '2026-01-08',
     currentStage: 'interview',
     stages: [
-        { name: 'Applied', status: 'completed', date: '2026-01-08' },
+        { name: 'Start Application', status: 'completed', date: '2026-01-08' },
         { name: 'Resume Screening', status: 'completed', date: '2026-01-09' },
-        { name: 'AI Interview', status: 'current', date: '2026-01-13' },
-        { name: 'Coding Challenge', status: 'upcoming', date: null },
+        { name: 'AI Assessment', status: 'current', date: '2026-01-13' },
         { name: 'Final Decision', status: 'upcoming', date: null },
     ],
     timeline: [
@@ -54,8 +53,8 @@ const mockApplication = {
     upcomingTasks: [
         {
             id: 1,
-            title: 'Complete AI Interview',
-            description: 'Answer technical and behavioral questions (45 min)',
+            title: 'Complete AI Assessment',
+            description: 'Technical interview and coding challenge (45 min)',
             dueDate: '2026-01-13',
             type: 'interview',
             action: '/portal/interview/123',
@@ -131,8 +130,8 @@ export default function PortalStatusPage() {
                                     </div>
                                     <div className="mt-3 text-center">
                                         <p className={`text-sm font-medium ${stage.status === 'current' ? 'text-blue-600' :
-                                                stage.status === 'completed' ? 'text-green-600' :
-                                                    'text-slate-400'
+                                            stage.status === 'completed' ? 'text-green-600' :
+                                                'text-slate-400'
                                             }`}>
                                             {stage.name}
                                         </p>
@@ -218,20 +217,9 @@ export default function PortalStatusPage() {
                                     <Video className="h-5 w-5 text-blue-600" />
                                 </div>
                                 <div>
-                                    <h4 className="font-medium text-slate-900">AI Interview</h4>
+                                    <h4 className="font-medium text-slate-900">AI Assessment</h4>
                                     <p className="text-sm text-slate-600">
-                                        Complete your technical and behavioral interview at your convenience
-                                    </p>
-                                </div>
-                            </div>
-                            <div className="flex items-start gap-3">
-                                <div className="p-2 bg-blue-100 rounded-lg">
-                                    <Code className="h-5 w-5 text-blue-600" />
-                                </div>
-                                <div>
-                                    <h4 className="font-medium text-slate-900">Coding Challenge</h4>
-                                    <p className="text-sm text-slate-600">
-                                        After interview approval, you&apos;ll receive a coding exercise
+                                        Complete your technical interview and coding challenge in one session
                                     </p>
                                 </div>
                             </div>

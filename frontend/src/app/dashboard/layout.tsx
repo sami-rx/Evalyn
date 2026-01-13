@@ -47,8 +47,6 @@ export default function DashboardLayout({
 
     const navigation = [
         { name: 'Jobs', href: '/dashboard/jobs', icon: Briefcase },
-        { name: 'Candidates', href: '/dashboard/candidates', icon: Users },
-        { name: 'Reviews', href: '/dashboard/reviews', icon: MessageSquare },
     ];
 
     return (
@@ -96,8 +94,8 @@ export default function DashboardLayout({
                             <Link
                                 href="/dashboard/integrations"
                                 className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${pathname.startsWith('/dashboard/integrations')
-                                        ? 'bg-slate-900 text-white'
-                                        : 'text-slate-700 hover:bg-slate-100'
+                                    ? 'bg-slate-900 text-white'
+                                    : 'text-slate-700 hover:bg-slate-100'
                                     }`}
                             >
                                 <Link2 className="h-5 w-5" />
