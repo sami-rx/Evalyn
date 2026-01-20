@@ -22,8 +22,13 @@ async def register(user_in: UserCreate, db: AsyncSession = Depends(get_db)):
         )
     user = await auth_service.create_user(user_in)
     
-    # Generate token for immediate login after registration
-    access_token = create_access_token(subject=user.email)
+    # Payload for the token (excluding 'sub' as it's passed separately)
+    token_claims = {
+        "name": user.name,
+        "role": user.role.value
+    }
+    
+    access_token = create_access_token(subject=user.email, extra_data=token_claims)
     token = {"access_token": access_token, "token_type": "bearer"}
     
     return {"user": user, "access_token": token}
@@ -37,5 +42,10 @@ async def login(login_data: UserLogin, db: AsyncSession = Depends(get_db)):
     if not user.is_active:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Inactive user")
     
-    access_token = create_access_token(subject=user.email)
+    token_claims = {
+        "name": user.name,
+        "role": user.role.value
+    }
+
+    access_token = create_access_token(subject=user.email, extra_data=token_claims)
     return {"access_token": access_token, "token_type": "bearer"}

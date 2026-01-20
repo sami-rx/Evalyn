@@ -14,12 +14,12 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
     DEBUG: bool = True
     API_V1_PREFIX: str = "/api/v1"
-    LOG_LEVEL: str = "INFO"   # ✅ FIXED
+    LOG_LEVEL: str = "INFO"
 
-    # Database
+    # Database (Neon PostgreSQL - async)
     DATABASE_URL: str = os.getenv(
         "DATABASE_URL",
-        "postgresql+asyncpg://neondb_owner:npg_MPCme14rlwYx@ep-super-darkness-ah973sum-pooler.c-3.us-east-1.aws.neon.tech/neondb"
+        "postgresql+asyncpg://neondb_owner:npg_LZVeUu9AP4vt@ep-twilight-sky-ahqetmqj-pooler.c-3.us-east-1.aws.neon.tech/neondb?ssl=require"
     )
 
     # Security
@@ -44,11 +44,11 @@ class Settings(BaseSettings):
     TWITTER_API_ENDPOINT: str = "https://api.twitter.com"
     INSTAGRAM_API_ENDPOINT: str = "https://graph.facebook.com/v18.0"
 
-    # ✅ Pydantic v2 config
+    # Pydantic v2 config
     model_config = SettingsConfigDict(
         env_file=".env",
         case_sensitive=True,
-        extra="ignore"   # allows extra env variables
+        extra="ignore"
     )
 
 

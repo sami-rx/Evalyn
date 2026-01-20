@@ -4,8 +4,10 @@ from src.api.models.user import UserRole
 
 class UserBase(BaseModel):
     email: EmailStr
+    name: str
 
 class UserCreate(UserBase):
+    name: str
     password: str
     role: UserRole = UserRole.GUEST
 
@@ -14,6 +16,7 @@ class UserLogin(UserBase):
 
 class UserResponse(UserBase):
     id: int
+    name: str
     role: UserRole
     is_active: bool
 
