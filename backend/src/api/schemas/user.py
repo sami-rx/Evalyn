@@ -31,7 +31,8 @@ class Token(BaseModel):
 
 class UserRegisterResponse(BaseModel):
     user: UserResponse
-    access_token: Token
+    access_token: str  # Changed from Token to str
+    token_type: str
 
 class TokenData(BaseModel):
     email: Optional[str] = None

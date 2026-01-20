@@ -16,28 +16,65 @@ router = APIRouter()
 @router.post("/register", response_model=UserRegisterResponse, status_code=status.HTTP_201_CREATED)
 async def register(user_in: UserCreate, db: AsyncSession = Depends(get_db)):
     auth_service = AuthService(db)
+    
+    # Check if email exists
     existing_user = await auth_service.get_user_by_email(user_in.email)
     if existing_user:
         raise HTTPException(
             status_code=400,
             detail="The user with this email already exists in the system.",
         )
+    
+    # ADD THIS: Check if username exists
+    existing_username = await auth_service.get_user_by_username(user_in.username)
+    if existing_username:
+        raise HTTPException(
+            status_code=400,
+            detail="The username is already taken.",
+        )
+    
     user = await auth_service.create_user(user_in)
     
     # Generate token for immediate login after registration
-    access_token = create_access_token(subject=user.email, username=user.username, role=user.role)
-    token = {"access_token": access_token, "token_type": "bearer"}
-    
-    return {"user": user, "access_token": token}
+    access_token = create_access_token(subject=user.email, username=user.username, role=user.role.value, user_id=user.id)
+    return {
+        "user": user, 
+        "access_token": access_token,
+        "token_type": "bearer"
+    }
 
 @router.post("/login", response_model=Token)
 async def login(login_data: UserLogin, db: AsyncSession = Depends(get_db)):
     auth_service = AuthService(db)
     user = await auth_service.authenticate_user(login_data.email, login_data.password)
-    if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password")
-    if not user.is_active:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Inactive user")
 
-    access_token = create_access_token(subject=user.email, username=user.username, role=user.role.id,user_id=user.id)
-    return {"access_token": access_token, "token_type": "bearer"}
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password"
+        )
+
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Inactive user"
+        )
+
+    access_token = create_access_token(
+        subject=user.email,
+        username=user.username,
+        role=user.role.value,   # ✅ FIXED
+        user_id=user.id
+    )
+
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": {
+            "id": user.id,
+            "username": user.username,
+            "email": user.email,
+            "role": user.role.value,
+            "is_active": user.is_active
+        }
+    }

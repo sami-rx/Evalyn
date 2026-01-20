@@ -11,12 +11,15 @@ class AuthService:
     async def get_user_by_email(self, email: str) -> User | None:
         result = await self.db.execute(select(User).where(User.email == email))
         return result.scalars().first()
+    async def get_user_by_username(self, username: str):
+        result = await self.db.execute(select(User).where(User.username == username))
+        return result.scalar_one_or_none()
 
     async def create_user(self, user_in: UserCreate) -> User:
         hashed_password = get_password_hash(user_in.password)
         db_user = User(
             email=user_in.email,
-            full_name=user_in.full_name,
+            username=user_in.username,
             hashed_password=hashed_password,
             role=user_in.role
         )
