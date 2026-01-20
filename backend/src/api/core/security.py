@@ -16,6 +16,7 @@ def create_access_token(
     subject: Union[str, Any],
     username: str,
     role: str,
+    user_id: int,
     expires_delta: Optional[timedelta] = None
 ) -> str:
     expire = datetime.utcnow() + (
@@ -24,7 +25,7 @@ def create_access_token(
         else timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     )
 
-    to_encode = {"exp": expire, "sub": str(subject), "username": username, "role": role}
+    to_encode = {"exp": expire, "sub": str(subject), "username": username, "role": role, "user_id": user_id}
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
