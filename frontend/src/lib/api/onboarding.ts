@@ -1,10 +1,11 @@
 import { apiClient } from './client';
 
+// The backend base URL (FastAPI) — used to resolve relative /uploads/... URLs.
+// NEXT_PUBLIC_API_BASE_URL already includes /api/v1, so strip that suffix.
 const BACKEND_BASE = (() => {
-    const langgraphUrl = process.env.NEXT_PUBLIC_LANGGRAPH_API_URL;
-    if (langgraphUrl) {
-        // Remove /api/v1 or /api/v2 if present to get the base host
-        return langgraphUrl.replace(/\/api\/v[0-9]+$/, '');
+    const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL;
+    if (apiBase) {
+        return apiBase.replace(/\/api\/v[0-9]+$/, '');
     }
     return process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8125';
 })();
@@ -18,6 +19,14 @@ export interface OnboardingResponse {
     reporting_time?: string;
     office_location?: string;
     shift_timing?: string;
+    
+    // Personal Info
+    cnic_number?: string;
+    phone_number?: string;
+    current_address?: string;
+    emergency_contact?: string;
+    bank_name?: string;
+    bank_iban?: string;
     
     // Virtual fields from backend
     candidate_name?: string;
@@ -125,5 +134,8 @@ export const onboardingApi = {
         formData.append(type, file);
         return apiClient.post<OnboardingResponse>(`/onboarding/${applicationId}/upload-documents${token ? `?token=${token}` : ''}`, formData);
     },
+    
+    complete: (applicationId: number, token?: string | null) => 
+        apiClient.post<OnboardingResponse>(`/onboarding/${applicationId}/complete${token ? `?token=${token}` : ''}`),
 };
 
