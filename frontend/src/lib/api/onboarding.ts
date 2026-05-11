@@ -1,14 +1,10 @@
-import { apiClient } from './client';
+import { apiClient, resolveUrl } from './client';
 
-// The backend base URL (FastAPI) — used to resolve relative /uploads/... URLs.
-// NEXT_PUBLIC_API_BASE_URL already includes /api/v1, so strip that suffix.
-const BACKEND_BASE = (() => {
-    const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL;
-    if (apiBase) {
-        return apiBase.replace(/\/api\/v[0-9]+$/, '');
-    }
-    return process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8125';
-})();
+/** Convert a relative /uploads/... URL to a full backend URL for viewing */
+export function getDocumentViewUrl(relativeUrl: string | undefined): string | null {
+    if (!relativeUrl) return null;
+    return resolveUrl(relativeUrl);
+}
 
 export interface OnboardingResponse {
     id: number;
@@ -64,13 +60,6 @@ export interface UploadResponse {
     url: string;
     filename: string;
     size: number;
-}
-
-/** Convert a relative /uploads/... URL to a full backend URL for viewing */
-export function getDocumentViewUrl(relativeUrl: string | undefined): string | null {
-    if (!relativeUrl) return null;
-    if (relativeUrl.startsWith('http')) return relativeUrl;
-    return `${BACKEND_BASE}${relativeUrl}`;
 }
 
 export const onboardingApi = {
