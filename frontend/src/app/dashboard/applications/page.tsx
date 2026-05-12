@@ -25,11 +25,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Eye, Search, Filter, Loader2, Trash2, Mail, Send } from "lucide-react";
+import { Eye, Search, Filter, Loader2, Trash2, Mail, Send, Download } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
+import JSZip from "jszip";
+import { saveAs } from "file-saver";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -45,7 +47,7 @@ interface Application {
     expected_salary?: number;
     salary_filter_status?: string;
     created_at?: string;
-    candidate?: { full_name?: string; email?: string };
+    candidate?: { full_name?: string; email?: string; candidate_profile?: { resume_url?: string } };
     job?: { title?: string };
 }
 
@@ -67,6 +69,8 @@ export default function ApplicationsPage() {
     const [cityFilter, setCityFilter] = useState("all");
     const [applications, setApplications] = useState<Application[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    const [isDownloading, setIsDownloading] = useState(false);
 
     // ── Invite modal state
     const [inviteApp, setInviteApp] = useState<Application | null>(null);
@@ -78,6 +82,7 @@ export default function ApplicationsPage() {
         try {
             const res = await api.applications.list();
             setApplications(res);
+            setSelectedIds(new Set((res as any[]).map((app) => app.id)));
         } catch (error: any) {
             console.error("Failed to fetch applications:", error);
             toast.error(`Error loading applications: ${error.message || "Please try again"}`);
@@ -168,6 +173,88 @@ export default function ApplicationsPage() {
           })
         : [];
 
+    const allFilteredSelected = filteredApps.length > 0 && filteredApps.every(app => selectedIds.has(app.id));
+    const someFilteredSelected = filteredApps.some(app => selectedIds.has(app.id));
+
+    const handleSelectAll = () => {
+        setSelectedIds(prev => {
+            const next = new Set(prev);
+            if (allFilteredSelected) {
+                filteredApps.forEach(app => next.delete(app.id));
+            } else {
+                filteredApps.forEach(app => next.add(app.id));
+            }
+            return next;
+        });
+    };
+
+    const handleSelectOne = (id: string) => {
+        setSelectedIds(prev => {
+            const next = new Set(prev);
+            if (next.has(id)) {
+                next.delete(id);
+            } else {
+                next.add(id);
+            }
+            return next;
+        });
+    };
+
+    const handleDownloadResumes = async () => {
+        const toDownload = applications.filter(app => selectedIds.has(app.id) && app.candidate?.candidate_profile?.resume_url);
+        if (toDownload.length === 0) {
+            toast.error("No resumes available for the selected applications");
+            return;
+        }
+        setIsDownloading(true);
+        const zip = new JSZip();
+        let failed = 0;
+
+        await Promise.all(toDownload.map(async (app) => {
+            try {
+                const resumeUrl = app.candidate?.candidate_profile?.resume_url;
+                const response = await fetch(resumeUrl!);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const blob = await response.blob();
+                const name = (app.candidate?.full_name || "Unknown")
+                    .replace(/[^a-zA-Z0-9 _-]/g, "").replace(/\s+/g, "_");
+                const job = (app.job?.title || "Unknown_Job")
+                    .replace(/[^a-zA-Z0-9 _-]/g, "").replace(/\s+/g, "_");
+                zip.file(`${name}_${job}.pdf`, blob);
+            } catch {
+                failed++;
+            }
+        }));
+
+        try {
+            const content = await zip.generateAsync({ type: "blob" });
+            const date = new Date().toISOString().split("T")[0];
+            saveAs(content, `resumes_${date}.zip`);
+            if (failed > 0) {
+                toast.warning(`Downloaded ${toDownload.length - failed} resume(s). ${failed} failed.`);
+            } else {
+                toast.success(`${toDownload.length} resume(s) bundled and downloaded`);
+            }
+        } catch {
+            toast.error("Failed to generate ZIP file");
+        } finally {
+            setIsDownloading(false);
+        }
+    };
+
+    const handleDownloadSingle = async (app: any) => {
+        try {
+            const response = await fetch(app.candidate?.candidate_profile?.resume_url);
+            if (!response.ok) throw new Error();
+            const blob = await response.blob();
+            const name = (app.candidate?.full_name || "Unknown").replace(/\s+/g, "_");
+            const job = (app.job?.title || "Unknown_Job").replace(/\s+/g, "_");
+            saveAs(blob, `${name}_${job}.pdf`);
+        } catch {
+            toast.error("Failed to download resume");
+        }
+    };
+
     // ── Loading
     if (isLoading) {
         return (
@@ -180,7 +267,6 @@ export default function ApplicationsPage() {
     // ── Render
     return (
         <div className="space-y-8">
-
             {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
@@ -189,7 +275,7 @@ export default function ApplicationsPage() {
                         Review candidates, AI-scored automatically. Send interview invites manually.
                     </p>
                 </div>
-                <div className="flex gap-2 w-full md:w-auto">
+                <div className="flex gap-2 w-full md:w-auto flex-wrap">
                     <div className="relative flex-1 md:w-64">
                         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input
@@ -213,6 +299,19 @@ export default function ApplicationsPage() {
                     <Button variant="outline" size="icon">
                         <Filter className="h-4 w-4" />
                     </Button>
+                    <Button
+                        variant="outline"
+                        className="gap-2 text-indigo-600 border-indigo-200 hover:bg-indigo-50 dark:text-indigo-400 dark:border-indigo-800 dark:hover:bg-indigo-950/40"
+                        onClick={handleDownloadResumes}
+                        disabled={selectedIds.size === 0 || isDownloading}
+                    >
+                        {isDownloading ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                            <Download className="h-4 w-4" />
+                        )}
+                        Download Resumes ({selectedIds.size})
+                    </Button>
                 </div>
             </div>
 
@@ -223,7 +322,18 @@ export default function ApplicationsPage() {
                         <Table>
                             <TableHeader>
                                 <TableRow className="hover:bg-transparent">
-                                    <TableHead className="w-[220px] pl-6">Candidate</TableHead>
+                                    <TableHead className="w-10 pl-4">
+                                        <input
+                                            type="checkbox"
+                                            checked={allFilteredSelected}
+                                            ref={(el) => {
+                                                if (el) el.indeterminate = !allFilteredSelected && someFilteredSelected;
+                                            }}
+                                            onChange={handleSelectAll}
+                                            className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer accent-indigo-600"
+                                        />
+                                    </TableHead>
+                                    <TableHead className="w-[250px] pl-4">Candidate</TableHead>
                                     <TableHead>City</TableHead>
                                     <TableHead>Qualification</TableHead>
                                     <TableHead>Job Role</TableHead>
@@ -239,10 +349,22 @@ export default function ApplicationsPage() {
                                 {filteredApps.map((app) => (
                                     <TableRow
                                         key={app.id}
-                                        className="group cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors"
+                                        className={`group cursor-pointer transition-colors ${
+                                            selectedIds.has(app.id)
+                                                ? "bg-indigo-50/70 dark:bg-indigo-950/20 hover:bg-indigo-50 dark:hover:bg-indigo-950/30"
+                                                : "hover:bg-slate-50 dark:hover:bg-slate-900/50"
+                                        }`}
                                     >
-                                        {/* Candidate */}
-                                        <TableCell className="pl-6 font-medium">
+                                        <TableCell className="pl-4">
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedIds.has(app.id)}
+                                                onChange={() => handleSelectOne(app.id)}
+                                                onClick={(e) => e.stopPropagation()}
+                                                className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer accent-indigo-600"
+                                            />
+                                        </TableCell>
+                                        <TableCell className="pl-4 font-medium">
                                             <div className="flex items-center gap-3">
                                                 <Avatar className="h-9 w-9 border border-border">
                                                     <AvatarFallback className="bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300">
@@ -364,6 +486,22 @@ export default function ApplicationsPage() {
                                                     Invite
                                                 </Button>
 
+                                                {/* Download resume */}
+                                                {app.candidate?.candidate_profile?.resume_url && (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        title="Download resume"
+                                                        className="opacity-0 group-hover:opacity-100 transition-opacity text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-950/40"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleDownloadSingle(app);
+                                                        }}
+                                                    >
+                                                        <Download className="w-4 h-4" />
+                                                    </Button>
+                                                )}
+
                                                 {/* Review */}
                                                 <Link href={`/dashboard/applications/${app.id}`}>
                                                     <Button
@@ -397,10 +535,7 @@ export default function ApplicationsPage() {
 
                                 {filteredApps.length === 0 && (
                                     <TableRow>
-                                        <TableCell
-                                            colSpan={10}
-                                            className="h-24 text-center text-muted-foreground"
-                                        >
+                                        <TableCell colSpan={11} className="h-24 text-center text-muted-foreground">
                                             No applications found.
                                         </TableCell>
                                     </TableRow>
